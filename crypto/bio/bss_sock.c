@@ -27,6 +27,11 @@
 #  define sock_puts  SockPuts
 # endif
 
+#if defined(OPENSSL_LINUX_TLS)
+    #include <netinet/tcp.h>
+#endif
+
+
 static int sock_write(BIO *h, const char *buf, int num);
 static int sock_read(BIO *h, char *buf, int size);
 static int sock_puts(BIO *h, const char *str);
@@ -108,6 +113,29 @@ static int sock_write(BIO *b, const char *in, int inl)
     int ret;
 
     clear_socket_error();
+    if (BIO_should_offload_tx_ctrl_msg_flag(b)) {
+        struct msghdr msg = {0};
+        struct cmsghdr *cmsg;
+        /* TODO: Use proper CMSG for control messages */
+        /*
+         * unsigned char *msgdata = CMSG_DATA(cmsg);
+         * msg.msg_control = in;
+         * msg.msg_controllen = sizeof in;
+         * cmsg = CMSG_FIRSTHDR(&msg);
+         * cmsg->cmsg_level = IPPROTO_TCP;
+         * cmsg->cmsg_type = TLS_CTRL;
+         */
+        msg.msg_control = in;
+        msg.msg_controllen = inl;
+#ifdef SSL_DEBUG
+        printf("\nsending ctrl msg\n");
+#endif
+        ret = sendmsg(b->num, &msg, 0);
+        BIO_clear_offload_tx_ctrl_msg_flag(b);
+    } else
+#ifdef SSL_DEBUG
+        printf("\nsending data msg %p %d\n", b, b->flags);
+#endif
     ret = writesocket(b->num, in, inl);
     BIO_clear_retry_flags(b);
     if (ret <= 0) {
@@ -121,6 +149,9 @@ static long sock_ctrl(BIO *b, int cmd, long num, void *ptr)
 {
     long ret = 1;
     int *ip;
+# ifdef OPENSSL_LINUX_TLS
+    struct tls_crypto_info_aes_gcm_128 *crypto_info;
+# endif
 
     switch (cmd) {
     case BIO_C_SET_FD:
@@ -148,6 +179,36 @@ static long sock_ctrl(BIO *b, int cmd, long num, void *ptr)
     case BIO_CTRL_FLUSH:
         ret = 1;
         break;
+# if defined(OPENSSL_LINUX_TLS)
+    case BIO_CTRL_SET_OFFLOAD_TX:
+        crypto_info = (struct tls_crypto_info_aes_gcm_128 *)ptr;
+        ret = setsockopt(b->num, SOL_TCP, TCP_TLS_TX,
+                         crypto_info, sizeof(*crypto_info));
+#ifdef SSL_DEBUG
+        printf("\nAttempt to offload...");
+#endif
+        if (!ret) {
+            BIO_set_offload_tx_flag(b);
+#ifdef SSL_DEBUG
+            printf("Success %p %p\n", b, &(b->flags));
+#endif
+        } else {
+#ifdef SSL_DEBUG
+            printf("Failed %d\n", ret);
+#endif
+        }
+        break;
+     case BIO_CTRL_GET_OFFLOAD_TX:
+         return BIO_should_offload_tx_flag(b);
+     case BIO_CTRL_SET_OFFLOAD_TX_CTRL_MSG:
+         BIO_set_offload_tx_ctrl_msg_flag(b);
+         ret = 0;
+         break;
+     case BIO_CTRL_CLEAR_OFFLOAD_TX_CTRL_MSG:
+         BIO_clear_offload_tx_ctrl_msg_flag(b);
+         ret = 0;
+         break;
+# endif
     default:
         ret = 0;
         break;
