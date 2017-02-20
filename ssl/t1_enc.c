@@ -42,7 +42,7 @@
 #include <openssl/rand.h>
 
 #ifdef OPENSSL_LINUX_TLS
-#  include <netinet/tcp.h> // Add TLS stuff here..
+#  include "netinet/tcp.h" // Add TLS stuff here..
 #endif
 
 /* seed1 through seed5 are concatenated */
