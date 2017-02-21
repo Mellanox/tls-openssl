@@ -322,7 +322,7 @@ int tls1_change_cipher_state(SSL *s, int which)
     /* check that cipher is AES_GCM_128 */
     if (EVP_CIPHER_mode(c) != EVP_CIPH_GCM_MODE) {
 #ifdef SSL_DEBUG
-        printf("\nGot mode %08xl != GCM, skipping offload\n",
+        printf("\nGot mode %08lx != GCM, skipping offload\n",
                EVP_CIPHER_mode(c));
 #endif
         goto skip_offload;
@@ -362,7 +362,7 @@ int tls1_change_cipher_state(SSL *s, int which)
         goto skip_offload;
     }
 
-    BIO_flush(wbio);
+    (void)BIO_flush(wbio);
 
     BIO_set_offload_tx(wbio, &crypto_info);
 

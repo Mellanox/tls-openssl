@@ -944,7 +944,7 @@ int ssl3_write_pending(SSL *s, int type, const unsigned char *buf,
              */
             if (BIO_get_offload_tx(s->wbio) &&
                     type != SSL3_RT_APPLICATION_DATA) {
-                BIO_flush(s->wbio);
+                (void)BIO_flush(s->wbio);
             }
         } else {
             SSLerr(SSL_F_SSL3_WRITE_PENDING, SSL_R_BIO_NOT_SET);

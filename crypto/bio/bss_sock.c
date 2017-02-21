@@ -115,9 +115,9 @@ static int sock_write(BIO *b, const char *in, int inl)
     clear_socket_error();
     if (BIO_should_offload_tx_ctrl_msg_flag(b)) {
         struct msghdr msg = {0};
-        struct cmsghdr *cmsg;
         /* TODO: Use proper CMSG for control messages */
-        /*
+        /* struct cmsghdr *cmsg;
+         *
          * unsigned char *msgdata = CMSG_DATA(cmsg);
          * msg.msg_control = in;
          * msg.msg_controllen = sizeof in;
@@ -125,7 +125,7 @@ static int sock_write(BIO *b, const char *in, int inl)
          * cmsg->cmsg_level = IPPROTO_TCP;
          * cmsg->cmsg_type = TLS_CTRL;
          */
-        msg.msg_control = in;
+        msg.msg_control = (void *)in;
         msg.msg_controllen = inl;
 #ifdef SSL_DEBUG
         printf("\nsending ctrl msg\n");
@@ -194,7 +194,7 @@ static long sock_ctrl(BIO *b, int cmd, long num, void *ptr)
 #endif
         } else {
 #ifdef SSL_DEBUG
-            printf("Failed %d\n", ret);
+            printf("Failed ret=%ld\n", ret);
 #endif
         }
         break;
