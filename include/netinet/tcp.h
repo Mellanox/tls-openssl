@@ -283,6 +283,27 @@ struct tls_crypto_info_aes_gcm_128 {
         unsigned char salt[TLS_CIPHER_AES_GCM_128_SALT_SIZE];
 };
 
+#define TLS_VERSION_MINOR(ver)  ((ver) & 0xFF)
+#define TLS_VERSION_MAJOR(ver)  (((ver) >> 8) & 0xFF)
+
+#define TLS_VERSION_NUMBER(id)  ((((id##_VERSION_MAJOR) & 0xFF) << 8) | \
+                                 ((id##_VERSION_MINOR) & 0xFF))
+
+#define TLS_1_2_VERSION_MAJOR   0x3
+#define TLS_1_2_VERSION_MINOR   0x3
+#define TLS_1_2_VERSION         TLS_VERSION_NUMBER(TLS_1_2)
+
+
+
+#define SOL_TLS         282
+#define TLS_CTRLMSG     1
+
+struct tls_ctrlmsg {
+        unsigned char   type;
+        unsigned int    len;
+        unsigned char   data[0];
+} __attribute__((packed));
+
 
 #endif /* Misc.  */
 
