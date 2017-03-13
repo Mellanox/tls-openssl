@@ -131,11 +131,12 @@ static int sock_write(BIO *b, const char *in, int inl)
 #endif
         ret = sendmsg(b->num, &msg, 0);
         BIO_clear_offload_tx_ctrl_msg_flag(b);
-    } else
+    } else {
 #ifdef SSL_DEBUG
         printf("\nsending data msg %p %d\n", b, b->flags);
 #endif
-    ret = writesocket(b->num, in, inl);
+        ret = writesocket(b->num, in, inl);
+    }
     BIO_clear_retry_flags(b);
     if (ret <= 0) {
         if (BIO_sock_should_retry(ret))
