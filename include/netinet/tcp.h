@@ -300,7 +300,6 @@ struct tls_crypto_info_aes_gcm_128 {
 
 struct tls_ctrlmsg {
         unsigned char   type;
-        unsigned int    len;
         unsigned char   data[0];
 } __attribute__((packed));
 

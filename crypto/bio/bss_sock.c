@@ -114,22 +114,10 @@ static int sock_write(BIO *b, const char *in, int inl)
 
     clear_socket_error();
     if (BIO_should_offload_tx_ctrl_msg_flag(b)) {
-        struct msghdr msg = {0};
-        struct cmsghdr *cmsg;
-        char buf[CMSG_SPACE(inl)];
-        memcpy(buf, in, inl);
-        msg.msg_control = buf;
-        msg.msg_controllen = sizeof(buf);
-        cmsg = CMSG_FIRSTHDR(&msg);
-        cmsg->cmsg_level = SOL_TLS;
-        cmsg->cmsg_type = TLS_CTRLMSG;
-        cmsg->cmsg_len = CMSG_LEN(inl);
-        memcpy(CMSG_DATA(cmsg), in, inl);
-        msg.msg_controllen = cmsg->cmsg_len;
 #ifdef SSL_DEBUG
         printf("\nsending ctrl msg\n");
 #endif
-        ret = sendmsg(b->num, &msg, 0);
+        ret = send(b->num, in, inl, MSG_OOB);
         BIO_clear_offload_tx_ctrl_msg_flag(b);
     } else {
 #ifdef SSL_DEBUG

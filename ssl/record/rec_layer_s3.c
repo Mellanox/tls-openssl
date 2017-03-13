@@ -756,7 +756,6 @@ int do_ssl3_write(SSL *s, int type, const unsigned char *buf,
             if (type != SSL3_RT_APPLICATION_DATA) {
                 struct tls_ctrlmsg *ctrl = outbuf[j];
                 ctrl->type = type & 0xff;
-                ctrl->len = pipelens[j];
                 outbuf[j] += sizeof(struct tls_ctrlmsg);
             }
             SSL3_RECORD_set_type(&wr[j], type);
