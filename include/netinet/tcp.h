@@ -293,10 +293,7 @@ struct tls_crypto_info_aes_gcm_128 {
 #define TLS_1_2_VERSION_MINOR   0x3
 #define TLS_1_2_VERSION         TLS_VERSION_NUMBER(TLS_1_2)
 
-
-
 #define SOL_TLS         282
-#define TLS_CTRLMSG     1
 
 struct tls_ctrlmsg {
         unsigned char   type;
