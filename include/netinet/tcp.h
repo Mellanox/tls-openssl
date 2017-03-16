@@ -265,15 +265,15 @@ struct tcp_md5sig
 #define TLS_CIPHER_AES_GCM_128_SALT_SIZE        ((size_t)4)
 #define TLS_CIPHER_AES_GCM_128_TAG_SIZE         ((size_t)16)
 
-enum tls_offload_state {
-        TLS_OFFLOAD_STATE_SW = 0x0,
-        TLS_OFFLOAD_STATE_HW = 0x1,
+enum tls_state {
+        TLS_STATE_SW = 0x0,
+        TLS_STATE_HW = 0x1,
 };
 
 struct tls_crypto_info {
         unsigned short version;
         unsigned short cipher_type;
-        unsigned int offload_state;
+        unsigned int state;
 };
 
 struct tls_crypto_info_aes_gcm_128 {
