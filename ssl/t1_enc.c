@@ -347,7 +347,11 @@ int tls1_change_cipher_state(SSL *s, int which)
 
     crypto_info.info.version = s->version;
 
+#ifdef OPENSSL_LINUX_TLS_SW
+    crypto_info.info.state = TLS_STATE_SW;
+#else
     crypto_info.info.state = TLS_STATE_HW;
+#endif
 
     /* This is not the IV that is used by OpenSSL, but rather the sequence
      * number. We should actually provide both iv and sequence.
