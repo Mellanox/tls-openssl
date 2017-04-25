@@ -108,17 +108,48 @@ static int sock_read(BIO *b, char *out, int outl)
     return (ret);
 }
 
+static int send_ctrl_message(int fd, unsigned char record_type,
+        const void *data, size_t length)
+{
+    struct msghdr msg = {0};
+    int cmsg_len = sizeof(record_type);
+    struct cmsghdr *cmsg;
+    char buf[CMSG_SPACE(cmsg_len)];
+    struct iovec msg_iov;   /* Vector of data to send/receive into */
+
+    msg.msg_control = buf;
+    msg.msg_controllen = sizeof(buf);
+    cmsg = CMSG_FIRSTHDR(&msg);
+    cmsg->cmsg_level = SOL_TLS;
+    cmsg->cmsg_type = TLS_SET_RECORD_TYPE;
+    cmsg->cmsg_len = CMSG_LEN(cmsg_len);
+    *((unsigned char *)CMSG_DATA(cmsg)) = record_type;
+    msg.msg_controllen = cmsg->cmsg_len;
+
+    msg_iov.iov_base = data;
+    msg_iov.iov_len = length;
+    msg.msg_iov = &msg_iov;
+    msg.msg_iovlen = 1;
+
+    return sendmsg(fd, &msg, 0);
+}
+
 static int sock_write(BIO *b, const char *in, int inl)
 {
     int ret;
 
     clear_socket_error();
     if (BIO_should_offload_tx_ctrl_msg_flag(b)) {
+        unsigned char record_type = *in;
+
 #ifdef SSL_DEBUG
         printf("\nsending ctrl msg\n");
 #endif
-        ret = send(b->num, in, inl, MSG_OOB);
         BIO_clear_offload_tx_ctrl_msg_flag(b);
+        ret = send_ctrl_message(b->num, record_type, in + 1, inl - 1);
+        if (ret >= 0) {
+            ret = inl;
+        }
     } else {
 #ifdef SSL_DEBUG
         printf("\nsending data msg %p %d\n", b, b->flags);
