@@ -61,11 +61,21 @@ const BIO_METHOD *BIO_s_socket(void)
 BIO *BIO_new_socket(int fd, int close_flag)
 {
     BIO *ret;
+    int rc;
 
     ret = BIO_new(BIO_s_socket());
     if (ret == NULL)
         return (NULL);
     BIO_set_fd(ret, fd, close_flag);
+#ifdef OPENSSL_LINUX_TLS
+    rc = setsockopt(fd, SOL_TCP, TCP_ULP, "tls", sizeof("tls"));
+#ifdef SSL_DEBUG
+    if (rc) {
+        printf("setsockopt failed %d\n", errno);
+    }
+#endif
+
+# endif
     return (ret);
 }
 
@@ -201,7 +211,7 @@ static long sock_ctrl(BIO *b, int cmd, long num, void *ptr)
 # if defined(OPENSSL_LINUX_TLS)
     case BIO_CTRL_SET_OFFLOAD_TX:
         crypto_info = (struct tls12_crypto_info_aes_gcm_128 *)ptr;
-        ret = setsockopt(b->num, SOL_TCP, TCP_TLS_TX,
+        ret = setsockopt(b->num, SOL_TLS, TLS_TX,
                          crypto_info, sizeof(*crypto_info));
 #ifdef SSL_DEBUG
         printf("\nAttempt to offload...");
