@@ -125,8 +125,9 @@ int tls1_change_cipher_state(SSL *s, int which)
     EVP_PKEY *mac_key;
     int n, i, j, k, cl;
     int reuse_dd = 0;
-    struct tls_crypto_info_aes_gcm_128 crypto_info;
+    struct tls12_crypto_info_aes_gcm_128 crypto_info;
     BIO *wbio;
+    unsigned char geniv[12];
 
     c = s->s3->tmp.new_sym_enc;
     m = s->s3->tmp.new_hash;
@@ -356,10 +357,12 @@ int tls1_change_cipher_state(SSL *s, int which)
     /* This is not the IV that is used by OpenSSL, but rather the sequence
      * number. We should actually provide both iv and sequence.
      */
-    memcpy(crypto_info.iv, &s->rlayer.write_sequence,
-           TLS_CIPHER_AES_GCM_128_IV_SIZE);
+    EVP_CIPHER_CTX_ctrl(dd, EVP_CTRL_GCM_GET_IV, 12, geniv);
+    memcpy(crypto_info.iv, geniv + 4, TLS_CIPHER_AES_GCM_128_IV_SIZE);
+    memcpy(crypto_info.salt, geniv, TLS_CIPHER_AES_GCM_128_SALT_SIZE);
     memcpy(crypto_info.key, key, EVP_CIPHER_key_length(c));
-    memcpy(crypto_info.salt, iv, k);
+    memcpy(crypto_info.rec_seq, &s->rlayer.write_sequence,
+            TLS_CIPHER_AES_GCM_128_REC_SEQ_SIZE);
 
     wbio = s->wbio;
     if (!wbio) {

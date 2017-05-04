@@ -28,7 +28,7 @@
 # endif
 
 #if defined(OPENSSL_LINUX_TLS)
-    #include <netinet/tcp.h>
+    #include "netinet/tcp.h"
 #endif
 
 
@@ -169,7 +169,7 @@ static long sock_ctrl(BIO *b, int cmd, long num, void *ptr)
     long ret = 1;
     int *ip;
 # ifdef OPENSSL_LINUX_TLS
-    struct tls_crypto_info_aes_gcm_128 *crypto_info;
+    struct tls12_crypto_info_aes_gcm_128 *crypto_info;
 # endif
 
     switch (cmd) {
@@ -200,7 +200,7 @@ static long sock_ctrl(BIO *b, int cmd, long num, void *ptr)
         break;
 # if defined(OPENSSL_LINUX_TLS)
     case BIO_CTRL_SET_OFFLOAD_TX:
-        crypto_info = (struct tls_crypto_info_aes_gcm_128 *)ptr;
+        crypto_info = (struct tls12_crypto_info_aes_gcm_128 *)ptr;
         ret = setsockopt(b->num, SOL_TCP, TCP_TLS_TX,
                          crypto_info, sizeof(*crypto_info));
 #ifdef SSL_DEBUG
